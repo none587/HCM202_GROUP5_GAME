@@ -1796,7 +1796,7 @@ const statEls=[
 ];
 const soundBtn=document.getElementById('soundBtn'),musicBtn=document.getElementById('musicBtn');
 
-let active=0,scores=[0,0],hits=0,first=null,second=null,locked=false,remaining=8,currentPair=null,currentPositive=0,currentNegative=0,peek=false,answered=false,stats=[{hit:0,miss:0,qc:0,qw:0,pos:0,neg:0},{hit:0,miss:0,qc:0,qw:0,pos:0,neg:0}];
+let active=0,scores=[0,0],hits=0,first=null,second=null,locked=false,remaining=8,currentPair=null,currentPositive=0,currentNegative=0,peek=false,answered=false,currentShownChoices=[],currentCorrectIndex=0,stats=[{hit:0,miss:0,qc:0,qw:0,pos:0,neg:0},{hit:0,miss:0,qc:0,qw:0,pos:0,neg:0}];
 let soundOn=true,musicOn=true,audioCtx=null,musicTimer=null,musicStep=0;
 
 function ensureAudio(){if(!audioCtx){const AC=window.AudioContext||window.webkitAudioContext;if(AC)audioCtx=new AC()}if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();if(musicOn)startMusic()}
@@ -2011,8 +2011,18 @@ function flip(c){
    qAnswer.hidden=true;
    qAnswer.textContent='';
    correctPreview.textContent='+'+QUESTION_BONUS;
+
+   // Xáo vị trí đáp án A/B/C mỗi lần câu hỏi xuất hiện.
+   const correctText=currentPair.choices[currentPair.correct];
+   currentShownChoices=[...currentPair.choices];
+   for(let j=currentShownChoices.length-1;j>0;j--){
+     const k=Math.floor(Math.random()*(j+1));
+     [currentShownChoices[j],currentShownChoices[k]]=[currentShownChoices[k],currentShownChoices[j]];
+   }
+   currentCorrectIndex=currentShownChoices.indexOf(correctText);
+
    choiceBtns.forEach((b,i)=>{
-     b.textContent=String.fromCharCode(65+i)+'. '+currentPair.choices[i];
+     b.textContent=String.fromCharCode(65+i)+'. '+currentShownChoices[i];
      b.disabled=false;
      b.classList.remove('correct','wrong');
    });
@@ -2028,24 +2038,25 @@ function flip(c){
 function answerChoice(index){
  if(answered)return;
  answered=true;
- const correct=index===currentPair.correct;
+ const correct=index===currentCorrectIndex;
  choiceBtns.forEach((b,i)=>{
    b.disabled=true;
-   if(i===currentPair.correct)b.classList.add('correct');
-   if(i===index&&i!==currentPair.correct)b.classList.add('wrong');
+   if(i===currentCorrectIndex)b.classList.add('correct');
+   if(i===index&&i!==currentCorrectIndex)b.classList.add('wrong');
  });
  hitLearning.hidden=false;
  if(correct){
    stats[active].qc++;
    qAnswer.hidden=false;
-   qAnswer.textContent='Đáp án đúng: '+currentPair.choices[currentPair.correct]+'.';
+   qAnswer.textContent='Đáp án đúng: '+currentShownChoices[currentCorrectIndex]+'.';
    scores[active]+=QUESTION_BONUS;
    stats[active].pos+=QUESTION_BONUS;
    sScore(true);
    say('Đúng! +'+QUESTION_BONUS+' điểm thưởng');
  }else{
    stats[active].qw++;
-   qAnswer.hidden=true;
+   qAnswer.hidden=false;
+   qAnswer.textContent='Chưa đúng. Đáp án đúng: '+currentShownChoices[currentCorrectIndex]+'.';
    sMiss();
    say('Sai! Không nhận điểm cộng câu hỏi.');
  }
