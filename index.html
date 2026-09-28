@@ -1,0 +1,1124 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Đại Đoàn Kết - Battle Card</title>
+<style>
+:root{
+ --bg:#efe4cf;--paper:#fffaf0;--ink:#2e2522;--muted:#746761;--line:#dfceb0;
+ --red:#8c1824;--red2:#b02b37;--gold:#e2b84f;--gold2:#f0ce78;--green:#397458;
+ --blue:#315d83;--shadow:0 18px 46px rgba(80,49,24,.14);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",Tahoma,Arial,sans-serif;color:var(--ink);
+ background:radial-gradient(circle at 10% 0%,rgba(255,255,255,.7),transparent 22%),
+ radial-gradient(circle at 90% 0%,rgba(140,24,36,.10),transparent 20%),
+ linear-gradient(180deg,#f5ecdc,#eee1cb);}
+button,input{font:inherit}
+.app{max-width:1280px;margin:0 auto;padding:20px}
+.hero{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:28px;padding:25px 28px;
+ background:linear-gradient(135deg,#fffdf8,#f8edd6 70%,#f2dfb7);box-shadow:var(--shadow)}
+.hero:after{content:"";position:absolute;right:-90px;top:-110px;width:350px;height:350px;border-radius:50%;
+ border:28px solid rgba(140,24,36,.055);box-shadow:0 0 0 28px rgba(226,184,79,.04)}
+.kicker{display:inline-flex;gap:8px;align-items:center;border:1px solid #d9c49b;background:#fff;padding:7px 12px;border-radius:999px;font-size:12px;font-weight:1000}
+h1{margin:10px 0 8px;font-size:clamp(34px,5vw,66px);line-height:.94;letter-spacing:-.045em;font-weight:1000}
+h1 span{color:var(--red)}
+.hero p{margin:0;color:var(--muted);font-size:17px;line-height:1.55;max-width:840px}
+.duel-strip{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;margin-top:16px;align-items:stretch}
+.team{border:1px solid var(--line);border-radius:22px;padding:15px 16px;background:rgba(255,255,255,.9);box-shadow:0 8px 18px rgba(80,49,24,.07);position:relative;overflow:hidden}
+.team.active{outline:4px solid rgba(226,184,79,.34);transform:translateY(-2px)}
+.team.red{border-top:6px solid var(--red)} .team.blue{border-top:6px solid var(--blue)}
+.team-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.team-name{font-size:18px;font-weight:1000} .score{font-size:36px;font-weight:1000;line-height:1}
+.team small{color:var(--muted);font-weight:800}
+.hit-meter{display:flex;gap:6px;margin-top:9px}
+.hit-dot{width:18px;height:18px;border-radius:50%;border:2px solid #d8c7aa;background:#fff}
+.hit-dot.on{background:var(--gold);border-color:#bd8f25;box-shadow:0 0 0 4px rgba(226,184,79,.14)}
+.vs{display:grid;place-items:center;padding:0 7px;font-size:20px;font-weight:1000;color:var(--red)}
+.statusbar{display:grid;grid-template-columns:1.55fr .75fr .75fr 1fr;gap:10px;margin-top:12px}
+.status{background:rgba(255,255,255,.88);border:1px solid var(--line);border-radius:18px;padding:12px 14px}
+.status small{display:block;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-size:11px;font-weight:1000}
+.status strong{display:block;margin-top:4px;font-size:17px}
+.audio{display:flex;gap:7px;align-items:center}
+.small-btn{border:1px solid #dfc797;border-radius:12px;background:linear-gradient(#fffdf7,#fff0d0);padding:9px 10px;font-weight:900;cursor:pointer}
+.small-btn.off{background:#eee9e2;color:#807872;border-color:#ddd2c4}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;margin-top:14px;align-items:start}
+.board-panel,.side{background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:26px;padding:15px;box-shadow:var(--shadow)}
+.board-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px}
+.board-head h2{margin:0;font-size:21px} .board-head p{margin:4px 0 0;color:var(--muted);font-size:14px}
+.control-row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:0;border-radius:14px;padding:11px 14px;font-weight:1000;cursor:pointer;transition:.16s}
+.btn:hover{transform:translateY(-2px)} .btn.primary{background:linear-gradient(var(--red2),var(--red));color:white;box-shadow:0 8px 18px rgba(140,24,36,.2)}
+.btn.gold{background:linear-gradient(#f3d176,#e2b84f);color:#4e3815} .btn.white{background:#fff;border:1px solid var(--line);color:var(--ink)}
+.board{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+.memory-card{border:0;background:transparent;padding:0;aspect-ratio:.82;perspective:1200px;cursor:pointer}
+.shell{position:relative;width:100%;height:100%;display:block;transform-style:preserve-3d;transition:transform .42s cubic-bezier(.2,.8,.2,1)}
+.memory-card.flipped .shell,.memory-card.matched .shell{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;border-radius:18px;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden}
+.back{display:grid;place-items:center;align-content:center;gap:7px;background:
+ radial-gradient(circle at center,transparent 0 19%,rgba(226,184,79,.25) 19% 21%,transparent 21% 34%,rgba(226,184,79,.18) 34% 36%,transparent 36% 49%,rgba(226,184,79,.13) 49% 51%,transparent 51%),
+ repeating-conic-gradient(from 0deg,rgba(226,184,79,.17) 0 7deg,transparent 7deg 14deg),
+ linear-gradient(145deg,#9d2934,#64121a);color:#f5e2a8;border:1px solid rgba(0,0,0,.1);box-shadow:inset 0 0 0 5px rgba(226,184,79,.13)}
+.sigil{font-size:48px;animation:spin 15s linear infinite} .back-label{font-size:12px;letter-spacing:.14em;font-weight:1000}
+.front{transform:rotateY(180deg);display:flex;flex-direction:column;align-items:center;text-align:center;padding:9px;background:linear-gradient(#fffefb,#f8f2e5);border:1px solid #e8dbc3}
+.archive-art{display:block;width:100%;height:52%;border:6px solid white;border-radius:9px;overflow:hidden;background:#c9c4bc;filter:grayscale(1) contrast(1.06);box-shadow:0 7px 16px rgba(0,0,0,.12)}
+.archive-art svg{width:100%;height:100%;display:block}
+.card-kind{margin-top:8px;font-size:18px;font-weight:1000;color:#61151d;line-height:1.05}
+.card-sub{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:900;margin-top:4px;min-height:26px}
+.point-chip{margin-top:auto;min-width:74px;padding:7px 10px;border-radius:999px;font-size:16px;font-weight:1000;background:#efeadf;border:1px solid #ded3c0;color:#453e39}
+.point-chip.pos{background:#e8f5ea;border-color:#a9d1b4;color:#246340} .point-chip.neg{background:#f9e5e6;border-color:#e1a9ad;color:#8b1f29}
+.point-chip.bigloss{background:linear-gradient(135deg,#2f2525,#7a1822);border-color:#5d121a;color:#fff;box-shadow:0 0 0 4px rgba(140,24,36,.12)}
+.memory-card.matched .front{outline:4px solid rgba(57,116,88,.22);outline-offset:-4px}
+.memory-card.matched .front:after{content:"HIT";position:absolute;right:7px;top:7px;background:var(--green);color:white;border-radius:999px;padding:5px 8px;font-size:11px;font-weight:1000;letter-spacing:.06em}
+.side{border-top:6px solid var(--red);position:sticky;top:12px}
+.side h3{margin:0;font-size:19px} .side p{color:var(--muted);line-height:1.55;font-size:14px}
+.info-box{margin-top:12px;border-radius:16px;padding:12px;background:#fff7e7;border:1px dashed #d2b36d}
+.legend{display:grid;gap:7px;margin-top:12px} .legend-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 10px;border-radius:12px;background:#f7f3ec}
+.legend-row b{font-size:13px} .legend-row span{font-weight:1000}
+.question-modal,.turn-modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(31,23,21,.63);padding:18px;z-index:60}
+.question-modal.show,.turn-modal.show{display:grid}
+.modal{width:min(720px,100%);background:#fffdf8;border-radius:26px;padding:24px;border:1px solid var(--line);box-shadow:0 30px 80px rgba(0,0,0,.26)}
+.hit-flash{font-size:58px;font-weight:1000;letter-spacing:.04em;color:var(--red);line-height:1;text-shadow:0 5px 0 #f0c65e;animation:hitPop .5s cubic-bezier(.2,.8,.2,1)}
+.q-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px} .pill{padding:6px 9px;border-radius:999px;background:#f5ead6;border:1px solid #ead2a6;font-size:12px;font-weight:900}
+.question{font-size:24px;font-weight:1000;line-height:1.3;margin:14px 0 10px}
+.answer{padding:12px 14px;border-radius:14px;background:#f3efe8;color:#5d534c;font-size:14px;line-height:1.55}
+.result-preview{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.preview{border-radius:14px;padding:12px;text-align:center;border:1px solid var(--line)} .preview b{display:block;font-size:22px}
+.modal-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+.ok{background:#397458;color:white} .bad{background:#8c1824;color:white} .neutral{background:#fff;border:1px solid var(--line)}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;transition:.24s;background:#2d2623;color:#fff;padding:11px 16px;border-radius:999px;font-weight:1000;z-index:90}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.confetti{position:fixed;top:-16px;width:9px;height:15px;z-index:100;pointer-events:none;animation:fall var(--dur) linear forwards}
+@keyframes spin{to{transform:rotate(360deg)}} @keyframes hitPop{0%{transform:scale(.65) rotate(-5deg);opacity:.2}70%{transform:scale(1.1) rotate(2deg)}100%{transform:scale(1)}}
+@keyframes fall{to{transform:translate(var(--drift),110vh) rotate(720deg)}}
+@media(max-width:1040px){.main{grid-template-columns:1fr}.side{position:static}.statusbar{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){.app{padding:11px}.duel-strip{grid-template-columns:1fr}.vs{display:none}.board{grid-template-columns:repeat(2,1fr)}.statusbar{grid-template-columns:1fr 1fr}.status:first-child{grid-column:1/-1}}
+@media(prefers-reduced-motion:reduce){.shell,.sigil,.hit-flash{animation:none!important;transition:none!important}}
+
+.choices{display:grid;gap:10px;margin:12px 0}
+.choice-btn{border:1px solid var(--line);background:#fff;border-radius:14px;padding:13px 15px;text-align:left;font-weight:900;cursor:pointer;transition:.16s}
+.choice-btn:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(80,49,24,.08)}
+.choice-btn.correct{background:#e9f6ed;border-color:#8bc29c;color:#235f3d}
+.choice-btn.wrong{background:#f8e5e7;border-color:#d99aa0;color:#84202a}
+.choice-btn:disabled{cursor:default;transform:none}
+
+
+/* ===== Giao diện nâng cấp ===== */
+html{scroll-behavior:smooth}
+body{min-height:100vh;position:relative;overflow-x:hidden}
+.bg-decor{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.bg-decor span{
+  position:absolute;display:block;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,255,255,.55), rgba(255,255,255,0) 70%);
+  filter:blur(2px);animation:floatOrb 16s ease-in-out infinite alternate;
+}
+.bg-decor span:nth-child(1){width:280px;height:280px;left:-70px;top:6%;background:radial-gradient(circle, rgba(255,245,220,.65), transparent 70%)}
+.bg-decor span:nth-child(2){width:340px;height:340px;right:-90px;top:18%;background:radial-gradient(circle, rgba(176,43,55,.11), transparent 70%);animation-delay:-4s}
+.bg-decor span:nth-child(3){width:240px;height:240px;left:20%;bottom:5%;background:radial-gradient(circle, rgba(226,184,79,.15), transparent 72%);animation-delay:-8s}
+.bg-decor span:nth-child(4){width:320px;height:320px;right:16%;bottom:-8%;background:radial-gradient(circle, rgba(49,93,131,.11), transparent 72%);animation-delay:-12s}
+@keyframes floatOrb{from{transform:translateY(-18px) translateX(-8px) scale(.98)}to{transform:translateY(16px) translateX(12px) scale(1.05)}}
+
+.app{position:relative;z-index:1}
+.hero{
+  border:1px solid rgba(223,206,176,.9);
+  background:
+    linear-gradient(135deg,rgba(255,253,248,.96),rgba(248,237,214,.96) 68%,rgba(242,223,183,.96)),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 2px, transparent 2px 10px);
+  box-shadow:0 22px 55px rgba(80,49,24,.16), inset 0 1px 0 rgba(255,255,255,.75);
+}
+.hero:before{
+  content:"";position:absolute;inset:auto 0 -28px 0;height:80px;
+  background:linear-gradient(180deg,transparent,rgba(255,255,255,.35));
+  pointer-events:none
+}
+.kicker{
+  box-shadow:0 8px 20px rgba(80,49,24,.08), inset 0 1px 0 rgba(255,255,255,.8);
+  letter-spacing:.04em
+}
+h1{
+  text-shadow:0 2px 0 rgba(255,255,255,.8), 0 16px 40px rgba(140,24,36,.12);
+}
+h1 span{
+  background:linear-gradient(180deg,#bf3642,#7d1420);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.hero p{max-width:880px}
+.duel-strip{gap:14px}
+.team,.status,.board-panel,.side,.modal{
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+.team{
+  box-shadow:0 12px 28px rgba(80,49,24,.08), inset 0 1px 0 rgba(255,255,255,.72);
+  transition:transform .2s ease, box-shadow .2s ease, outline-color .2s ease;
+}
+.team:before{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(120deg, rgba(255,255,255,.28), transparent 45%, rgba(255,255,255,.1) 60%, transparent 100%);
+  pointer-events:none
+}
+.team.red{background:linear-gradient(180deg, rgba(255,255,255,.93), rgba(255,247,247,.88))}
+.team.blue{background:linear-gradient(180deg, rgba(255,255,255,.93), rgba(245,250,255,.88))}
+.team.active{
+  outline:4px solid rgba(226,184,79,.42);
+  box-shadow:0 16px 34px rgba(80,49,24,.14), 0 0 0 8px rgba(226,184,79,.10);
+}
+.team.active .team-name{letter-spacing:.02em}
+.score{
+  text-shadow:0 6px 20px rgba(0,0,0,.10);
+  transition:transform .22s ease;
+}
+.score.pop{animation:scorePop .42s cubic-bezier(.2,.8,.2,1)}
+@keyframes scorePop{0%{transform:scale(.85)}55%{transform:scale(1.14)}100%{transform:scale(1)}}
+.hit-dot{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.85), 0 4px 10px rgba(0,0,0,.04);
+}
+.hit-dot.on{
+  animation:hitGlow 1.1s ease-in-out infinite alternate;
+}
+@keyframes hitGlow{from{transform:scale(1)}to{transform:scale(1.1)}}
+.vs{
+  align-self:center;padding:0 14px;
+  text-shadow:0 5px 18px rgba(140,24,36,.18)
+}
+
+.status{
+  background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,252,247,.88));
+  box-shadow:0 10px 24px rgba(80,49,24,.06), inset 0 1px 0 rgba(255,255,255,.65);
+}
+.status strong{font-size:18px}
+.small-btn,.btn,.choice-btn{
+  box-shadow:0 8px 16px rgba(80,49,24,.08), inset 0 1px 0 rgba(255,255,255,.55);
+}
+.small-btn,.btn{transition:transform .18s ease, box-shadow .18s ease, filter .18s ease}
+.small-btn:hover,.btn:hover{box-shadow:0 12px 22px rgba(80,49,24,.12), inset 0 1px 0 rgba(255,255,255,.6)}
+.small-btn:active,.btn:active,.choice-btn:active{transform:translateY(1px) scale(.98)}
+
+.board-panel,.side{
+  background:linear-gradient(180deg, rgba(255,255,255,.94), rgba(255,251,245,.88));
+  box-shadow:0 18px 42px rgba(80,49,24,.10), inset 0 1px 0 rgba(255,255,255,.75);
+}
+.board{gap:14px}
+.memory-card{transition:transform .18s ease}
+.memory-card:hover{transform:translateY(-3px)}
+.shell{filter:drop-shadow(0 12px 20px rgba(80,49,24,.14))}
+.front,.back{border-radius:22px}
+.back{
+  box-shadow:
+    inset 0 0 0 5px rgba(226,184,79,.13),
+    0 10px 25px rgba(80,49,24,.16);
+  position:relative
+}
+.back:before{
+  content:"";position:absolute;inset:-40% -90% auto auto;width:80%;height:190%;
+  background:linear-gradient(100deg, transparent 15%, rgba(255,255,255,.28) 45%, transparent 70%);
+  transform:rotate(18deg);
+  animation:cardSheen 5.4s ease-in-out infinite;
+}
+.back:after{
+  content:"";position:absolute;inset:8px;border-radius:16px;border:1px solid rgba(255,239,199,.24);
+}
+@keyframes cardSheen{
+  0%,100%{transform:translateX(-40%) rotate(18deg);opacity:0}
+  10%{opacity:.4}
+  40%{transform:translateX(110%) rotate(18deg);opacity:.25}
+  60%{opacity:0}
+}
+.sigil{
+  text-shadow:0 6px 18px rgba(0,0,0,.18);
+  filter:drop-shadow(0 6px 10px rgba(0,0,0,.10))
+}
+.front{
+  background:
+    linear-gradient(180deg,#fffefb 0%,#fbf4e7 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.65);
+}
+.archive-art{
+  position:relative;
+  border:7px solid rgba(255,255,255,.95);
+  box-shadow:0 12px 22px rgba(0,0,0,.12);
+  transition:transform .25s ease, filter .25s ease;
+}
+.memory-card:hover .archive-art{
+  transform:scale(1.03);
+  filter:grayscale(1) contrast(1.12) brightness(1.03);
+}
+.archive-art:after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(135deg, rgba(255,255,255,.18), transparent 35%, rgba(0,0,0,.05) 100%);
+  pointer-events:none
+}
+.card-kind{font-size:19px}
+.card-sub{line-height:1.25}
+.point-chip{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.65), 0 6px 12px rgba(0,0,0,.06);
+  transition:transform .2s ease
+}
+.memory-card:hover .point-chip{transform:translateY(-1px) scale(1.03)}
+.point-chip.pos{
+  background:linear-gradient(180deg,#eff9f0,#dff0e4)
+}
+.point-chip.neg{
+  background:linear-gradient(180deg,#faecee,#f6dde0)
+}
+.point-chip.bigloss{
+  background:linear-gradient(135deg,#3a2e2e,#7a1822);
+  box-shadow:0 0 0 4px rgba(140,24,36,.12), 0 10px 18px rgba(0,0,0,.14)
+}
+.memory-card.matched .front{
+  box-shadow:0 0 0 4px rgba(57,116,88,.10), 0 16px 30px rgba(57,116,88,.18), inset 0 1px 0 rgba(255,255,255,.7);
+  animation:matchedPulse .8s ease;
+}
+.memory-card.matched .front:before{
+  content:"";position:absolute;inset:-20%;
+  background:linear-gradient(120deg, transparent 35%, rgba(255,255,255,.8) 50%, transparent 66%);
+  animation:shineAcross 1.15s ease-out 1;
+  pointer-events:none
+}
+@keyframes matchedPulse{0%{transform:scale(.96)}40%{transform:scale(1.03)}100%{transform:scale(1)}}
+@keyframes shineAcross{from{transform:translateX(-65%) rotate(10deg)}to{transform:translateX(65%) rotate(10deg)}}
+
+.side{
+  border-top:7px solid var(--red);
+}
+.side h3,.board-head h2{letter-spacing:-.02em}
+.info-box,.legend-row,.preview,.answer{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6);
+}
+
+.question-modal,.turn-modal{
+  backdrop-filter:blur(5px);
+  -webkit-backdrop-filter:blur(5px);
+}
+.modal{
+  background:
+    linear-gradient(180deg, rgba(255,254,250,.97), rgba(255,248,237,.94));
+  box-shadow:0 30px 80px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.8);
+}
+.hit-flash{
+  background:linear-gradient(180deg,#cc2f3d,#7f1520);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:none;
+}
+.q-meta .pill{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6);
+}
+.question{letter-spacing:-.02em}
+.preview{
+  background:linear-gradient(180deg, rgba(255,255,255,.7), rgba(245,238,227,.85));
+}
+.choice-btn{
+  position:relative;
+  background:linear-gradient(180deg,#ffffff,#fbf7ef);
+  padding-left:58px;
+}
+.choice-btn:before{
+  content:attr(data-choice);
+  position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  width:30px;height:30px;border-radius:50%;
+  display:grid;place-items:center;font-size:14px;font-weight:1000;
+  color:#5e4635;background:linear-gradient(180deg,#fff7df,#eed8a5);
+  border:1px solid #e2c98f;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8)
+}
+.choice-btn:hover{background:linear-gradient(180deg,#fff,#f6efdf)}
+.choice-btn.correct{
+  box-shadow:0 0 0 5px rgba(139,194,156,.18);
+}
+.choice-btn.wrong{
+  box-shadow:0 0 0 5px rgba(217,154,160,.16);
+}
+.modal-actions{justify-content:flex-end}
+.toast{
+  background:linear-gradient(180deg, rgba(45,38,35,.95), rgba(25,20,18,.98));
+  box-shadow:0 16px 28px rgba(0,0,0,.24);
+}
+.confetti{
+  border-radius:2px;
+  box-shadow:0 3px 10px rgba(0,0,0,.16);
+}
+.turn-glow{animation:turnFlash .6s ease}
+@keyframes turnFlash{0%{box-shadow:0 0 0 0 rgba(226,184,79,.45)}100%{box-shadow:0 0 0 12px rgba(226,184,79,0)}}
+
+@media(max-width:760px){
+  .hero{padding:20px 18px}
+  .board{gap:11px}
+  .card-kind{font-size:17px}
+  .question{font-size:21px}
+}
+
+
+.summary-board{
+  margin-top:14px;
+  background:linear-gradient(180deg, rgba(255,255,255,.94), rgba(255,251,245,.88));
+  border:1px solid var(--line);
+  border-radius:26px;
+  padding:16px;
+  box-shadow:0 18px 42px rgba(80,49,24,.10), inset 0 1px 0 rgba(255,255,255,.75);
+}
+.summary-head h3{margin:0;font-size:20px;letter-spacing:-.02em}
+.summary-head p{margin:6px 0 12px;color:var(--muted);font-size:14px}
+.summary-wrap{overflow:auto}
+.summary-table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  min-width:840px;
+  overflow:hidden;
+  border-radius:18px;
+}
+.summary-table thead th{
+  position:sticky; top:0;
+  background:linear-gradient(180deg,#fff8eb,#f3e2bf);
+  color:#573f2d;
+  font-size:13px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  padding:12px 10px;
+  border-bottom:1px solid #e5cf9d;
+}
+.summary-table tbody td{
+  padding:12px 10px;
+  text-align:center;
+  border-bottom:1px solid #eee2cd;
+  background:rgba(255,255,255,.72);
+  font-weight:900;
+}
+.summary-table tbody tr:last-child td{border-bottom:none}
+.summary-table tbody td:first-child{ text-align:left; white-space:nowrap }
+.summary-table .row-red td:first-child{color:#7b1620}
+.summary-table .row-blue td:first-child{color:#264f73}
+.summary-table tbody tr:hover td{background:#fffdf9}
+.archive-art img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+  filter:grayscale(1) contrast(1.08);
+}
+.finish-summary{
+  margin-top:14px;
+  border:1px solid #e5d2ac;
+  border-radius:16px;
+  overflow:hidden;
+}
+.finish-summary table{
+  width:100%;
+  border-collapse:collapse;
+}
+.finish-summary th,.finish-summary td{
+  padding:10px 12px;
+  border-bottom:1px solid #eee2cd;
+  text-align:center;
+}
+.finish-summary tr:last-child td{border-bottom:none}
+.finish-summary th{
+  background:#fff6e3;
+  font-size:13px;
+  text-transform:uppercase;
+  letter-spacing:.03em;
+}
+.finish-summary td:first-child,.finish-summary th:first-child{text-align:left}
+
+
+/* ===== FIX CARD 3D + KÍCH THƯỚC ỔN ĐỊNH ===== */
+.board{
+  align-items:stretch;
+  grid-auto-rows:260px;
+}
+.memory-card{
+  display:block;
+  width:100%;
+  height:260px;
+  min-height:260px;
+  aspect-ratio:auto !important;
+  perspective:1400px;
+  transform:none;
+}
+.memory-card:hover{
+  transform:translateY(-3px);
+}
+.memory-card .shell{
+  width:100%;
+  height:100%;
+  min-height:260px;
+  display:block;
+  position:relative;
+  transform-style:preserve-3d !important;
+  -webkit-transform-style:preserve-3d !important;
+  filter:none !important;
+  transition:transform .5s cubic-bezier(.2,.75,.2,1);
+}
+.memory-card.flipped .shell,
+.memory-card.matched .shell{
+  transform:rotateY(180deg);
+}
+.memory-card .face{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  display:flex;
+  backface-visibility:hidden !important;
+  -webkit-backface-visibility:hidden !important;
+  transform-style:preserve-3d;
+  -webkit-transform-style:preserve-3d;
+}
+.memory-card .back{
+  transform:rotateY(0deg) translateZ(1px);
+  -webkit-transform:rotateY(0deg) translateZ(1px);
+  z-index:2;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+}
+.memory-card .front{
+  transform:rotateY(180deg) translateZ(1px);
+  -webkit-transform:rotateY(180deg) translateZ(1px);
+  z-index:1;
+  justify-content:flex-start;
+}
+.memory-card.flipped .front,
+.memory-card.matched .front{
+  z-index:3;
+}
+.memory-card .archive-art{
+  height:145px;
+  flex:0 0 145px;
+  width:100%;
+}
+.memory-card .archive-art img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+}
+.memory-card .card-kind{
+  margin-top:10px;
+  font-size:18px;
+}
+.memory-card .card-sub{
+  min-height:30px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.memory-card .point-chip{
+  margin-top:auto;
+  margin-bottom:2px;
+}
+@media(max-width:760px){
+  .board{grid-auto-rows:225px}
+  .memory-card,.memory-card .shell{height:225px;min-height:225px}
+  .memory-card .archive-art{height:118px;flex-basis:118px}
+}
+
+
+/* ===== SAFETY: không bao giờ hiện mặt sau bị soi gương ===== */
+.memory-card .front{visibility:hidden}
+.memory-card .back{visibility:visible}
+.memory-card.flipped .back,
+.memory-card.matched .back{visibility:hidden}
+.memory-card.flipped .front,
+.memory-card.matched .front{visibility:visible}
+
+
+.result-preview .preview{
+  min-height:64px;
+  display:grid;
+  place-items:center;
+}
+.result-preview .preview b{
+  font-size:30px;
+  line-height:1;
+  font-weight:1000;
+}
+
+</style>
+</head>
+<body>
+<div class="bg-decor" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+<div class="app">
+<section class="hero">
+ <div class="kicker">⚔️ BATTLE CARD • 2 ĐỘI</div>
+ <h1>ĐẠI ĐOÀN KẾT <span>HIT BATTLE</span></h1>
+ <p>Hai đội vừa phải nhớ vị trí cặp thẻ, vừa tính toán điểm ẩn để giành lợi thế. Ghép đúng gọi là <b>HIT</b>. Một đội được HIT tối đa 2 lần liên tiếp; MISS là chuyển lượt ngay. Điểm âm bị trừ ngay khi HIT, còn điểm dương chỉ nhận được khi trả lời đúng câu hỏi A/B/C.</p>
+</section>
+
+<section class="duel-strip">
+ <div class="team red active" id="team0">
+   <div class="team-top"><div><div class="team-name">🔴 ĐỘI ĐỎ</div><small>HIT trong lượt</small></div><div class="score" id="score0">0</div></div>
+   <div class="hit-meter"><i class="hit-dot" id="hit00"></i><i class="hit-dot" id="hit01"></i></div>
+ </div>
+ <div class="vs">VS</div>
+ <div class="team blue" id="team1">
+   <div class="team-top"><div><div class="team-name">🔵 ĐỘI XANH</div><small>HIT trong lượt</small></div><div class="score" id="score1">0</div></div>
+   <div class="hit-meter"><i class="hit-dot" id="hit10"></i><i class="hit-dot" id="hit11"></i></div>
+ </div>
+</section>
+
+<section class="statusbar">
+ <div class="status"><small>Lượt hiện tại</small><strong id="turnText">Đội Đỏ chọn thẻ đầu tiên</strong></div>
+ <div class="status"><small>HIT</small><strong id="hitText">0 / 2</strong></div>
+ <div class="status"><small>Cặp còn lại</small><strong id="remainText">8</strong></div>
+ <div class="status audio">
+   <button class="small-btn" id="soundBtn">🔊 SFX</button>
+   <button class="small-btn" id="musicBtn">🎵 Nhạc</button>
+ </div>
+</section>
+
+
+<section class="summary-board">
+  <div class="summary-head">
+    <div>
+      <h3>📊 Bảng tổng kết trực tiếp</h3>
+      <p>Theo dõi nhanh từng đội: HIT đúng, HIT sai, câu đúng/sai, điểm âm, điểm dương và tổng điểm.</p>
+    </div>
+  </div>
+  <div class="summary-wrap">
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Đội</th>
+          <th>HIT đúng</th>
+          <th>HIT sai</th>
+          <th>Câu đúng</th>
+          <th>Câu sai</th>
+          <th>Điểm âm</th>
+          <th>Điểm dương</th>
+          <th>Tổng điểm</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="row-red">
+          <td><strong>🔴 Đội Đỏ</strong></td>
+          <td id="s0_hit">0</td>
+          <td id="s0_miss">0</td>
+          <td id="s0_qc">0</td>
+          <td id="s0_qw">0</td>
+          <td id="s0_neg">0</td>
+          <td id="s0_pos">0</td>
+          <td id="s0_total">0</td>
+        </tr>
+        <tr class="row-blue">
+          <td><strong>🔵 Đội Xanh</strong></td>
+          <td id="s1_hit">0</td>
+          <td id="s1_miss">0</td>
+          <td id="s1_qc">0</td>
+          <td id="s1_qw">0</td>
+          <td id="s1_neg">0</td>
+          <td id="s1_pos">0</td>
+          <td id="s1_total">0</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<main class="main">
+ <section class="board-panel">
+   <div class="board-head">
+     <div><h2>Chọn 2 thẻ để tìm HIT</h2><p>Điểm chỉ lộ ra khi thẻ được lật. Mỗi thẻ dùng <b>ảnh tư liệu thật</b>; hãy nhớ cả <b>khái niệm</b> lẫn <b>điểm</b> để tính đường đi.</p></div>
+     <div class="control-row">
+       <button class="btn gold" id="peekBtn">👁 MC xem nhanh</button>
+       <button class="btn white" id="resetBtn">↻ Ván mới</button>
+     </div>
+   </div>
+   <div class="board" id="board"><button class="memory-card" type="button" aria-label="Thẻ úp">
+      <span class="shell">
+        <span class="face back">
+          <span class="sigil">✦</span>
+          <span class="back-label">ĐẠI ĐOÀN KẾT</span>
+        </span>
+        <span class="face front">
+          <span class="archive-art"></span>
+          <span class="card-kind"></span>
+          <span class="card-sub"></span>
+          <span class="point-chip"></span>
+        </span>
+      </span>
+    </button>
+<button class="memory-card" type="button" aria-label="Thẻ úp">
+      <span class="shell">
+        <span class="face back">
+          <span class="sigil">✦</span>
+          <span class="back-label">ĐẠI ĐOÀN KẾT</span>
+        </span>
+        <span class="face front">
+          <span class="archive-art"></span>
+          <span class="card-kind"></span>
+          <span class="card-sub"></span>
+          <span class="point-chip"></span>
+        </span>
+      </span>
+    </button>
+<button class="memory-card" type="button" aria-label="Thẻ úp">
+      <span class="shell">
+        <span class="face back">
+          <span class="sigil">✦</span>
+          <span class="back-label">ĐẠI ĐOÀN KẾT</span>
+        </span>
+        <span class="face front">
+          <span class="archive-art"></span>
+          <span class="card-kind"></span>
+          <span class="card-sub"></span>
+          <span class="point-chip"></span>
+        </span>
+      </span>
+    </button>
+<button class="memory-card" type="button" aria-label="Thẻ úp">
+      <span class="shell">
+        <span class="face back">
+          <span class="sigil">✦</span>
+          <span class="back-label">ĐẠI ĐOÀN KẾT</span>
+        </span>
+        <span class="face front">
+          <span class="archive-art"></span>
+          <span class="card-kind"></span>
+          <span class="card-sub"></span>
+          <span class="point-chip"></span>
+        </span>
+      </span>
+    </button>
+<button class="memory-card" type="button" aria-label="Thẻ úp">
+      <span class="shell">
+        <span class="face back">
+          <span class="sigil">✦</span>
+          <span class="back-label">ĐẠI ĐOÀN KẾT</span>
+        </span>
+        <span class="face front">
+          <span class="archive-art"></span>
+          <span class="card-kind"></span>
+          <span class="card-sub"></span>
+          <span class="point-chip"></span>
+        </span>
+      </span>
+    </button>
+<button class="memory-card" type="button" aria-label="Thẻ úp">
+      <span class="shell">
+        <span class="face back">
+          <span class="sigil">✦</span>
+          <span class="back-label">ĐẠI ĐOÀN KẾT</span>
+        </span>
+        <span class="face front">
+          <span class="archive-art"></span>
+          <span class="card-kind"></span>
+          <span class="card-sub"></span>
+          <span class="point-chip"></span>
+        </span>
+      </span>
+    </button>
+<button class="memory-card" type="button" aria-label="Thẻ úp">
+      <span class="shell">
+        <span class="face back">
+          <span class="sigil">✦</span>
+          <span class="back-label">ĐẠI ĐOÀN KẾT</span>
+        </span>
+        <span class="face front">
+          <span class="archive-art"></span>
+          <span class="card-kind"></span>
+          <span class="card-sub"></span>
+          <span class="point-chip"></span>
+        </span>
+      </span>
+    </button>
+<button class="memory-card" type="button" aria-label="Thẻ úp">
+      <span class="shell">
+        <span class="face back">
+          <span class="sigil">✦</span>
+          <span class="back-label">ĐẠI ĐOÀN KẾT</span>
+        </span>
+        <span class="face front">
+          <span class="archive-art"></span>
+          <span class="card-kind"></span>
+          <span class="card-sub"></span>
+          <span class="point-chip"></span>
+        </span>
+      </span>
+    </button>
+<button class="memory-card" type="button" aria-label="Thẻ úp">
+      <span class="shell">
+        <span class="face back">
+          <span class="sigil">✦</span>
+          <span class="back-label">ĐẠI ĐOÀN KẾT</span>
+        </span>
+        <span class="face front">
+          <span class="archive-art"></span>
+          <span class="card-kind"></span>
+          <span class="card-sub"></span>
+          <span class="point-chip"></span>
+        </span>
+      </span>
+    </button>
+<button class="memory-card" type="button" aria-label="Thẻ úp">
+      <span class="shell">
+        <span class="face back">
+          <span class="sigil">✦</span>
+          <span class="back-label">ĐẠI ĐOÀN KẾT</span>
+        </span>
+        <span class="face front">
+          <span class="archive-art"></span>
+          <span class="card-kind"></span>
+          <span class="card-sub"></span>
+          <span class="point-chip"></span>
+        </span>
+      </span>
+    </button>
+<button class="memory-card" type="button" aria-label="Thẻ úp">
+      <span class="shell">
+        <span class="face back">
+          <span class="sigil">✦</span>
+          <span class="back-label">ĐẠI ĐOÀN KẾT</span>
+        </span>
+        <span class="face front">
+          <span class="archive-art"></span>
+          <span class="card-kind"></span>
+          <span class="card-sub"></span>
+          <span class="point-chip"></span>
+        </span>
+      </span>
+    </button>
+<button class="memory-card" type="button" aria-label="Thẻ úp">
+      <span class="shell">
+        <span class="face back">
+          <span class="sigil">✦</span>
+          <span class="back-label">ĐẠI ĐOÀN KẾT</span>
+        </span>
+        <span class="face front">
+          <span class="archive-art"></span>
+          <span class="card-kind"></span>
+          <span class="card-sub"></span>
+          <span class="point-chip"></span>
+        </span>
+      </span>
+    </button>
+<button class="memory-card" type="button" aria-label="Thẻ úp">
+      <span class="shell">
+        <span class="face back">
+          <span class="sigil">✦</span>
+          <span class="back-label">ĐẠI ĐOÀN KẾT</span>
+        </span>
+        <span class="face front">
+          <span class="archive-art"></span>
+          <span class="card-kind"></span>
+          <span class="card-sub"></span>
+          <span class="point-chip"></span>
+        </span>
+      </span>
+    </button>
+<button class="memory-card" type="button" aria-label="Thẻ úp">
+      <span class="shell">
+        <span class="face back">
+          <span class="sigil">✦</span>
+          <span class="back-label">ĐẠI ĐOÀN KẾT</span>
+        </span>
+        <span class="face front">
+          <span class="archive-art"></span>
+          <span class="card-kind"></span>
+          <span class="card-sub"></span>
+          <span class="point-chip"></span>
+        </span>
+      </span>
+    </button>
+<button class="memory-card" type="button" aria-label="Thẻ úp">
+      <span class="shell">
+        <span class="face back">
+          <span class="sigil">✦</span>
+          <span class="back-label">ĐẠI ĐOÀN KẾT</span>
+        </span>
+        <span class="face front">
+          <span class="archive-art"></span>
+          <span class="card-kind"></span>
+          <span class="card-sub"></span>
+          <span class="point-chip"></span>
+        </span>
+      </span>
+    </button>
+<button class="memory-card" type="button" aria-label="Thẻ úp">
+      <span class="shell">
+        <span class="face back">
+          <span class="sigil">✦</span>
+          <span class="back-label">ĐẠI ĐOÀN KẾT</span>
+        </span>
+        <span class="face front">
+          <span class="archive-art"></span>
+          <span class="card-kind"></span>
+          <span class="card-sub"></span>
+          <span class="point-chip"></span>
+        </span>
+      </span>
+    </button></div>
+ </section>
+
+ <aside class="side">
+   <h3>🎤 Bảng điều khiển MC</h3>
+   <p>MISS không trừ điểm. Chỉ sau khi HIT, MC mới hỏi câu hỏi. Khi HIT, mọi điểm âm trên 2 thẻ bị trừ ngay. Sau đó đội trả lời câu hỏi A/B/C: đúng thì nhận tổng điểm dương của 2 thẻ; sai thì không nhận điểm dương và không bị trừ thêm.</p>
+   <div class="info-box">
+     <b>Luật chuyển lượt</b><br>
+     • MISS → đổi đội ngay.<br>
+     • HIT → được đi tiếp.<br>
+     • Tối đa 2 HIT trong một lượt → tự đổi đội.<br>
+     • Sai câu hỏi → không nhận điểm dương, không bị trừ thêm; HIT vẫn được tính.
+   </div>
+   <div class="legend">
+     <div class="legend-row"><b>Điểm dương</b><span>+10 · +20 · +30 · +40 · +50</span></div>
+     <div class="legend-row"><b>Điểm âm</b><span>-10 · -20 · -30 · -40 · -60</span></div>
+   </div>
+ </aside>
+</main>
+</div>
+
+<div class="question-modal" id="questionModal">
+ <div class="modal">
+   <div class="hit-flash">HIT!</div>
+   <div class="q-meta"><span class="pill" id="qSection"></span><span class="pill" id="qPoints"></span><span class="pill" id="qTeam"></span></div>
+   <div class="question" id="qText"></div>
+   <div class="choices" id="choices">
+     <button class="choice-btn" data-choice="A"></button>
+     <button class="choice-btn" data-choice="B"></button>
+     <button class="choice-btn" data-choice="C"></button>
+   </div>
+   <div class="answer" id="qAnswer" hidden></div>
+   <div class="result-preview">
+     <div class="preview"><b id="correctPreview"></b></div>
+     <div class="preview"><b>+0</b></div>
+   </div>
+   <div class="modal-actions">
+     <button class="btn neutral" id="continueBtn" hidden>Tiếp tục</button>
+   </div>
+ </div>
+</div>
+
+<div class="turn-modal" id="finishModal">
+ <div class="modal">
+   <div class="hit-flash" id="finishTitle">KẾT THÚC!</div>
+   <div class="question" id="finishText"></div>
+   <div class="modal-actions"><button class="btn primary" id="againBtn">Chơi ván mới</button><button class="btn neutral" id="closeFinish">Đóng</button></div>
+ </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+const PAIRS=[
+{id:1,section:'5.1.1 • Vai trò',kind:'Vai trò',sub:'Sức mạnh toàn dân',art:'hands',photo:'assets/leaders_handshake.jpg',q:'Vì sao đại đoàn kết toàn dân tộc có vai trò quan trọng?',choices:['Vì giúp tập hợp và phát huy sức mạnh của toàn dân','Vì chỉ tập trung vào một giai cấp duy nhất','Vì thay thế hoàn toàn vai trò của các tổ chức'],correct:0,a:'Vì đại đoàn kết giúp tập hợp và phát huy sức mạnh của toàn dân để thực hiện mục tiêu chung.'},
+{id:2,section:'5.1.2 • Lực lượng',kind:'Lực lượng',sub:'Toàn thể nhân dân',art:'people',photo:'assets/farmers_field.jpg',q:'Chủ thể của khối đại đoàn kết toàn dân tộc là ai?',choices:['Toàn thể nhân dân','Chỉ cán bộ nhà nước','Chỉ công nhân và nông dân'],correct:0,a:'Là toàn thể nhân dân, được tập hợp rộng rãi trong khối đại đoàn kết.'},
+{id:3,section:'5.1.2 • Lực lượng',kind:'Lực lượng',sub:'Công – Nông – Trí thức',art:'group',photo:'assets/leaders_handshake.jpg',q:'Ba lực lượng nào giữ vai trò nền tảng trong khối đại đoàn kết?',choices:['Công nhân, nông dân và trí thức','Doanh nhân, học sinh và bộ đội','Cán bộ, sinh viên và nghệ sĩ'],correct:0,a:'Công nhân, nông dân và trí thức.'},
+{id:4,section:'5.1.3 • Điều kiện',kind:'Điều kiện',sub:'Truyền thống đoàn kết',art:'heart',photo:'assets/ho_chi_minh_portrait.jpg',q:'Một điều kiện quan trọng để xây dựng khối đại đoàn kết là kế thừa truyền thống nào?',choices:['Yêu nước, nhân nghĩa và đoàn kết','Cạnh tranh giữa các nhóm','Tách biệt lợi ích của từng tầng lớp'],correct:0,a:'Truyền thống yêu nước, nhân nghĩa và đoàn kết của dân tộc.'},
+{id:5,section:'5.1.3 • Điều kiện',kind:'Điều kiện',sub:'Khoan dung, độ lượng',art:'dove',photo:'assets/ho_chi_minh_portrait.jpg',q:'Khoan dung, độ lượng giúp ích gì cho việc xây dựng khối đại đoàn kết?',choices:['Giúp tôn trọng khác biệt và tập hợp nhiều lực lượng hơn','Giúp loại bỏ các ý kiến khác nhau','Giúp một nhóm có quyền quyết định tất cả'],correct:0,a:'Giúp tôn trọng sự khác biệt và tập hợp được nhiều lực lượng hơn.'},
+{id:6,section:'5.1.4 • Hình thức',kind:'Hình thức',sub:'Mặt trận dân tộc thống nhất',art:'building',photo:'assets/leaders_handshake.jpg',q:'Hình thức tổ chức của khối đại đoàn kết toàn dân tộc là gì?',choices:['Mặt trận dân tộc thống nhất','Một tổ chức nghề nghiệp riêng lẻ','Một nhóm tự phát tạm thời'],correct:0,a:'Mặt trận dân tộc thống nhất.'},
+{id:7,section:'5.1.4 • Nguyên tắc',kind:'Nguyên tắc',sub:'Hiệp thương dân chủ',art:'talk',photo:'assets/presentation_map.jpg',q:'Hiệp thương dân chủ nhấn mạnh cách làm việc như thế nào?',choices:['Cùng bàn bạc để đi đến thống nhất','Bên đông người tự quyết định','Áp đặt ý kiến của một phía'],correct:0,a:'Cùng bàn bạc, trao đổi để đi đến thống nhất thay vì áp đặt.'},
+{id:8,section:'5.1.5 • Phương thức',kind:'Phương thức',sub:'Vận động quần chúng',art:'megaphone',photo:'assets/presentation_map.jpg',q:'Một phương thức quan trọng để xây dựng khối đại đoàn kết là gì?',choices:['Vận động, tuyên truyền và thuyết phục quần chúng','Chỉ ban hành mệnh lệnh hành chính','Hạn chế trao đổi với quần chúng'],correct:0,a:'Vận động, tuyên truyền và thuyết phục quần chúng.'}
+];
+const SCORE_DECK=[50,40,30,30,20,20,10,10,10,-10,-10,-20,-20,-30,-40,-60];
+
+function art(type){
+ const c='viewBox="0 0 120 92" aria-hidden="true"';
+ const m={
+ people:`<svg ${c}><rect width="120" height="92" fill="#c6c0b7"/><circle cx="28" cy="33" r="11" fill="#5e5953"/><circle cx="50" cy="27" r="12" fill="#77716a"/><circle cx="75" cy="34" r="11" fill="#5e5953"/><circle cx="96" cy="31" r="10" fill="#6b665f"/><path d="M10 85c2-19 11-29 24-29s21 10 22 29" fill="#55504a"/><path d="M34 85c2-22 10-34 22-34s19 12 21 34" fill="#76706a"/><path d="M60 85c2-18 10-28 22-28s18 10 22 28" fill="#4f4a45"/></svg>`,
+ group:`<svg ${c}><rect width="120" height="92" fill="#c6c0b7"/><rect x="14" y="49" width="92" height="23" rx="3" fill="#817a72"/><circle cx="31" cy="36" r="9" fill="#5e5953"/><circle cx="60" cy="29" r="10" fill="#77716a"/><circle cx="89" cy="36" r="9" fill="#5e5953"/><path d="M20 87l7-20h11l6 20M50 87l6-22h10l6 22M78 87l7-20h11l6 20" fill="#55504a"/></svg>`,
+ hands:`<svg ${c}><rect width="120" height="92" fill="#c6c0b7"/><path d="M23 53c11-17 24-18 34-4l8 10 9-14c8-13 22-11 26 3-4 17-19 30-39 39-22-9-35-20-38-34z" fill="#66615b"/><path d="M35 33l15 15M85 33L71 48" stroke="#efefef" stroke-width="5" stroke-linecap="round" opacity=".75"/></svg>`,
+ heart:`<svg ${c}><rect width="120" height="92" fill="#c6c0b7"/><path d="M60 76C27 57 20 40 30 25c9-12 25-8 30 4 4-12 20-16 29-4 10 15 2 32-29 51z" fill="#66615b"/><path d="M60 31v35M42 49h36" stroke="#efefef" stroke-width="4" opacity=".7"/></svg>`,
+ dove:`<svg ${c}><rect width="120" height="92" fill="#c6c0b7"/><path d="M22 53c14-23 30-29 47-23-6 6-8 12-7 17 10-3 17-2 22 4-11 14-28 21-48 21-6-4-11-10-14-19z" fill="#f5f5f5" stroke="#6f6963" stroke-width="2"/><circle cx="71" cy="39" r="2.5" fill="#444"/></svg>`,
+ building:`<svg ${c}><rect width="120" height="92" fill="#c6c0b7"/><path d="M17 39l43-23 43 23z" fill="#57524d"/><rect x="25" y="42" width="70" height="31" rx="2" fill="#eceae6"/><path d="M35 43v27M49 43v27M63 43v27M77 43v27" stroke="#827c75" stroke-width="6"/><rect x="18" y="72" width="84" height="7" fill="#57524d"/></svg>`,
+ talk:`<svg ${c}><rect width="120" height="92" fill="#c6c0b7"/><path d="M13 25h55a14 14 0 0114 14v8a14 14 0 01-14 14H41L24 76l4-15H13z" fill="#66615b"/><path d="M62 36h31a11 11 0 0111 11v4a11 11 0 01-11 11H78l-10 10 3-10H62z" fill="#918c85"/><circle cx="32" cy="43" r="3" fill="#eee"/><circle cx="46" cy="43" r="3" fill="#eee"/><circle cx="59" cy="43" r="3" fill="#eee"/></svg>`,
+ megaphone:`<svg ${c}><rect width="120" height="92" fill="#c6c0b7"/><path d="M26 43l43-21v43L26 51z" fill="#625d58"/><rect x="18" y="40" width="15" height="16" rx="4" fill="#a19c95"/><path d="M40 54l8 23h11l-7-27z" fill="#49453f"/><path d="M80 30c8 7 8 19 0 27M91 22c12 12 12 31 0 42" fill="none" stroke="#eee" stroke-width="4" stroke-linecap="round"/></svg>`
+ };
+ return m[type]||m.people;
+}
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+const board=document.getElementById('board');
+const cards=[...board.querySelectorAll('.memory-card')];
+const scoreEls=[document.getElementById('score0'),document.getElementById('score1')];
+const teamEls=[document.getElementById('team0'),document.getElementById('team1')];
+const turnText=document.getElementById('turnText'),hitText=document.getElementById('hitText'),remainText=document.getElementById('remainText');
+const qModal=document.getElementById('questionModal'),qSection=document.getElementById('qSection'),qPoints=document.getElementById('qPoints'),qTeam=document.getElementById('qTeam'),qText=document.getElementById('qText'),qAnswer=document.getElementById('qAnswer'),correctPreview=document.getElementById('correctPreview');
+const finishModal=document.getElementById('finishModal'),finishTitle=document.getElementById('finishTitle'),finishText=document.getElementById('finishText'),toast=document.getElementById('toast');
+const choiceBtns=[...document.querySelectorAll('.choice-btn')],continueBtn=document.getElementById('continueBtn');
+const statEls=[
+  {hit:document.getElementById('s0_hit'),miss:document.getElementById('s0_miss'),qc:document.getElementById('s0_qc'),qw:document.getElementById('s0_qw'),neg:document.getElementById('s0_neg'),pos:document.getElementById('s0_pos'),total:document.getElementById('s0_total')},
+  {hit:document.getElementById('s1_hit'),miss:document.getElementById('s1_miss'),qc:document.getElementById('s1_qc'),qw:document.getElementById('s1_qw'),neg:document.getElementById('s1_neg'),pos:document.getElementById('s1_pos'),total:document.getElementById('s1_total')}
+];
+const soundBtn=document.getElementById('soundBtn'),musicBtn=document.getElementById('musicBtn');
+
+let active=0,scores=[0,0],hits=0,first=null,second=null,locked=false,remaining=8,currentPair=null,currentPositive=0,currentNegative=0,peek=false,answered=false,stats=[{hit:0,miss:0,qc:0,qw:0,pos:0,neg:0},{hit:0,miss:0,qc:0,qw:0,pos:0,neg:0}];
+let soundOn=true,musicOn=true,audioCtx=null,musicTimer=null,musicStep=0;
+
+function ensureAudio(){if(!audioCtx){const AC=window.AudioContext||window.webkitAudioContext;if(AC)audioCtx=new AC()}if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();if(musicOn)startMusic()}
+function tone(f,d=.12,type='triangle',v=.05,delay=0){if(!soundOn||!audioCtx)return;const t=audioCtx.currentTime+delay,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(v,.001),t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(audioCtx.destination);o.start(t);o.stop(t+d+.03)}
+function sFlip(){tone(520,.07)} function sHit(){tone(523,.13);tone(659,.14,'triangle',.05,.09);tone(784,.18,'triangle',.05,.18)} function sMiss(){tone(180,.13,'sawtooth',.025);tone(145,.18,'sawtooth',.02,.08)} function sScore(up){if(up){tone(660,.12);tone(880,.16,'triangle',.05,.1)}else{tone(170,.18,'sawtooth',.03);tone(120,.22,'sawtooth',.02,.1)}}
+function playMusic(){if(!musicOn||!audioCtx)return;const m=[220,277.18,329.63,277.18,246.94,293.66,369.99,293.66];const f=m[musicStep++%m.length],t=audioCtx.currentTime,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.012,t+.04);g.gain.exponentialRampToValueAtTime(.0001,t+.52);o.connect(g);g.connect(audioCtx.destination);o.start(t);o.stop(t+.55)}
+function startMusic(){if(!audioCtx||!musicOn||musicTimer)return;playMusic();musicTimer=setInterval(playMusic,760)} function stopMusic(){if(musicTimer){clearInterval(musicTimer);musicTimer=null}}
+
+function labelScore(v){return (v>0?'+':'')+v}
+function update(){
+ scoreEls.forEach((e,i)=>{
+   if(e.textContent!==String(scores[i])){
+     e.classList.remove('pop'); void e.offsetWidth; e.classList.add('pop');
+   }
+   e.textContent=scores[i];
+ });
+ teamEls.forEach((e,i)=>e.classList.toggle('active',i===active));
+ hitText.textContent=hits+' / 2';remainText.textContent=remaining;
+ document.getElementById('hit00').classList.toggle('on',active===0&&hits>=1);
+ document.getElementById('hit01').classList.toggle('on',active===0&&hits>=2);
+ document.getElementById('hit10').classList.toggle('on',active===1&&hits>=1);
+ document.getElementById('hit11').classList.toggle('on',active===1&&hits>=2);
+ statEls.forEach((row,i)=>{
+   row.hit.textContent=stats[i].hit;
+   row.miss.textContent=stats[i].miss;
+   row.qc.textContent=stats[i].qc;
+   row.qw.textContent=stats[i].qw;
+   row.neg.textContent=stats[i].neg;
+   row.pos.textContent=stats[i].pos;
+   row.total.textContent=scores[i];
+ });
+}
+function setTurnMsg(msg){turnText.textContent=msg}
+function say(t){toast.textContent=t;toast.classList.add('show');clearTimeout(say.t);say.t=setTimeout(()=>toast.classList.remove('show'),1400)}
+function switchTurn(reason){
+ active=1-active;hits=0;first=second=null;locked=false;
+ setTurnMsg((active===0?'Đội Đỏ':'Đội Xanh')+' chọn thẻ đầu tiên'+(reason?' • '+reason:''));
+ update();
+ const t=teamEls[active]; t.classList.remove('turn-glow'); void t.offsetWidth; t.classList.add('turn-glow');
+}
+function setup(){
+ const deck=shuffle(PAIRS.flatMap(p=>[{...p},{...p}]));
+ const points=shuffle(SCORE_DECK);
+ cards.forEach((c,i)=>{
+   const item=deck[i];
+   c.className='memory-card';
+   c.disabled=false;
+   c.dataset.pair=item.id;
+   c.dataset.idx=i;
+   c.dataset.point=points[i];
+   const artBox=c.querySelector('.archive-art');
+   if(item.photo){
+     artBox.innerHTML='<img src="'+item.photo+'" alt="'+item.sub+'">';
+   }else{
+     artBox.innerHTML=art(item.art);
+   }
+   c.querySelector('.card-kind').textContent=item.kind;
+   c.querySelector('.card-sub').textContent=item.sub;
+   const chip=c.querySelector('.point-chip');
+   chip.textContent=labelScore(points[i]);
+   chip.className='point-chip '+(points[i]>=0?'pos':'neg')+(points[i]<=-40?' bigloss':'');
+   if(!c.dataset.bound){
+     c.addEventListener('click',()=>flip(c));
+     c.dataset.bound='1';
+   }
+ });
+ active=0;scores=[0,0];hits=0;first=second=null;locked=false;remaining=8;currentPair=null;currentPositive=0;currentNegative=0;peek=false;answered=false;stats=[{hit:0,miss:0,qc:0,qw:0,pos:0,neg:0},{hit:0,miss:0,qc:0,qw:0,pos:0,neg:0}];
+ qModal.classList.remove('show');finishModal.classList.remove('show');document.getElementById('peekBtn').textContent='👁 MC xem nhanh';setTurnMsg('Đội Đỏ chọn thẻ đầu tiên');update();teamEls[0].classList.remove('turn-glow');void teamEls[0].offsetWidth;teamEls[0].classList.add('turn-glow')
+}
+function flip(c){
+ if(locked||peek||c===first||c.classList.contains('matched'))return;
+ ensureAudio();sFlip();c.classList.add('flipped');
+ if(!first){first=c;setTurnMsg((active===0?'Đội Đỏ':'Đội Xanh')+' chọn thẻ thứ hai');return}
+ second=c;locked=true;
+ if(first.dataset.pair===second.dataset.pair){
+   sHit();first.classList.add('matched');second.classList.add('matched');hits++;remaining--;stats[active].hit++;
+   currentPair=PAIRS.find(p=>String(p.id)===first.dataset.pair);
+   const p1=Number(first.dataset.point),p2=Number(second.dataset.point);
+   currentPositive=Math.max(0,p1)+Math.max(0,p2);
+   currentNegative=Math.min(0,p1)+Math.min(0,p2);
+   if(currentNegative<0){
+     scores[active]+=currentNegative;
+     stats[active].neg+=currentNegative;
+     sScore(false);
+     say('HIT! '+currentNegative+' điểm từ thẻ âm');
+   }
+   qSection.textContent=currentPair.section;
+   qPoints.textContent='Điểm thẻ: '+(p1>0?'+':'')+p1+' & '+(p2>0?'+':'')+p2;
+   qTeam.textContent=active===0?'Đội Đỏ':'Đội Xanh';
+   qText.textContent=currentPair.q;
+   qAnswer.hidden=true;
+   qAnswer.textContent='Đáp án: '+currentPair.choices[currentPair.correct]+' — '+currentPair.a;
+   correctPreview.textContent=currentPositive>0?('+'+currentPositive):'+0';
+   choiceBtns.forEach((b,i)=>{
+     b.textContent=String.fromCharCode(65+i)+'. '+currentPair.choices[i];
+     b.disabled=false;
+     b.classList.remove('correct','wrong');
+   });
+   continueBtn.hidden=true;
+   answered=false;
+   qModal.classList.add('show');
+   update();
+ } else {
+   stats[active].miss++; sMiss();say('MISS! Không trừ điểm — đổi lượt.');
+   setTimeout(()=>{first.classList.remove('flipped');second.classList.remove('flipped');switchTurn('MISS')},950)
+ }
+}
+function answerChoice(index){
+ if(answered)return;
+ answered=true;
+ const correct=index===currentPair.correct;
+ choiceBtns.forEach((b,i)=>{
+   b.disabled=true;
+   if(i===currentPair.correct)b.classList.add('correct');
+   if(i===index&&i!==currentPair.correct)b.classList.add('wrong');
+ });
+ qAnswer.hidden=false;
+ if(correct){
+   stats[active].qc++;
+   if(currentPositive>0){
+     scores[active]+=currentPositive;
+     stats[active].pos+=currentPositive;
+     sScore(true);
+     say('Đúng! +'+currentPositive+' điểm');
+   }else{
+     say('Đúng! Cặp này không có điểm dương.');
+   }
+ }else{
+   stats[active].qw++;
+   sMiss();
+   say('Sai! Không cộng điểm dương.');
+ }
+ update();
+ continueBtn.hidden=false;
+}
+function continueAfterQuestion(){
+ qModal.classList.remove('show');
+ first=second=null;
+ locked=false;
+ if(remaining===0){finish();return}
+ if(hits>=2){setTimeout(()=>switchTurn('đã HIT 2 lần'),250)}
+ else{setTurnMsg((active===0?'Đội Đỏ':'Đội Xanh')+' được đi tiếp • HIT '+hits+'/2')}
+}
+function finish(){
+ stopMusic();
+ const a=scores[0],b=scores[1];
+ let title;
+ if(a>b){title='ĐỘI ĐỎ THẮNG!'}
+ else if(b>a){title='ĐỘI XANH THẮNG!'}
+ else{title='HÒA!'}
+ finishTitle.textContent=title;
+ finishText.innerHTML=
+   '<div><b>Kết quả cuối cùng</b></div>'+
+   '<div class="finish-summary"><table>'+
+   '<thead><tr><th>Đội</th><th>HIT đúng</th><th>HIT sai</th><th>Câu đúng</th><th>Câu sai</th><th>Điểm âm</th><th>Điểm dương</th><th>Tổng điểm</th></tr></thead>'+
+   '<tbody>'+
+   '<tr><td>🔴 Đội Đỏ</td><td>'+stats[0].hit+'</td><td>'+stats[0].miss+'</td><td>'+stats[0].qc+'</td><td>'+stats[0].qw+'</td><td>'+stats[0].neg+'</td><td>'+stats[0].pos+'</td><td>'+scores[0]+'</td></tr>'+
+   '<tr><td>🔵 Đội Xanh</td><td>'+stats[1].hit+'</td><td>'+stats[1].miss+'</td><td>'+stats[1].qc+'</td><td>'+stats[1].qw+'</td><td>'+stats[1].neg+'</td><td>'+stats[1].pos+'</td><td>'+scores[1]+'</td></tr>'+
+   '</tbody></table></div>';
+ finishModal.classList.add('show');
+ confetti()
+}
+function confetti(){const cs=['#8c1824','#e2b84f','#315d83','#397458'];for(let i=0;i<65;i++){const x=document.createElement('i');x.className='confetti';x.style.left=Math.random()*100+'vw';x.style.background=cs[i%cs.length];x.style.setProperty('--dur',(2.4+Math.random()*2.2)+'s');x.style.setProperty('--drift',(-80+Math.random()*160)+'px');document.body.appendChild(x);setTimeout(()=>x.remove(),5000)}}
+
+choiceBtns.forEach((b,i)=>b.addEventListener('click',()=>answerChoice(i)));
+continueBtn.addEventListener('click',continueAfterQuestion);
+document.getElementById('resetBtn').addEventListener('click',()=>{ensureAudio();setup()});
+document.getElementById('againBtn').addEventListener('click',()=>{ensureAudio();setup();startMusic()});
+document.getElementById('closeFinish').addEventListener('click',()=>finishModal.classList.remove('show'));
+document.getElementById('peekBtn').addEventListener('click',e=>{if(locked)return;ensureAudio();peek=!peek;cards.filter(c=>!c.classList.contains('matched')).forEach(c=>c.classList.toggle('flipped',peek));e.currentTarget.textContent=peek?'🙈 Úp lại':'👁 MC xem nhanh'});
+soundBtn.addEventListener('click',()=>{ensureAudio();soundOn=!soundOn;soundBtn.classList.toggle('off',!soundOn);soundBtn.textContent=soundOn?'🔊 SFX':'🔇 SFX'});
+musicBtn.addEventListener('click',()=>{ensureAudio();musicOn=!musicOn;musicBtn.classList.toggle('off',!musicOn);musicBtn.textContent=musicOn?'🎵 Nhạc':'🎵 Tắt';if(musicOn)startMusic();else stopMusic()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stopMusic();else if(musicOn&&audioCtx)startMusic()});
+setup();
+})();
+</script>
+</body></html>
